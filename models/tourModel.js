@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
+const User = require("./userModel");
 // const validator = require('validator');
 
 const tourSchema = new mongoose.Schema(
@@ -101,7 +102,14 @@ const tourSchema = new mongoose.Schema(
         day: Number,
       },
     ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "User",
+      },
+    ],
   },
+  //   For showing the fields which are calculated based on other fields but do not exist in DB
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -115,6 +123,12 @@ tourSchema.virtual("durationWeeks").get(function () {
 // DOCUMENT MIDDLEWARE: runs before .save() and .create()
 tourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+tourSchema.pre("save", async function (next) {
+  const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+  this.guides = await Promise.all(guidesPromises);
   next();
 });
 
@@ -142,6 +156,14 @@ tourSchema.post(/^find/, function (docs, next) {
   next();
 });
 
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "guides",
+    // hides these fields
+    select: "-__v -passwordChangedAt",
+  });
+  next();
+});
 // AGGREGATION MIDDLEWARE
 tourSchema.pre("aggregate", function (next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
