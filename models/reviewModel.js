@@ -26,13 +26,23 @@ const reviewSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Review must belong to an user"],
     },
-  }, 
-//   For showing the fields which are calculated based on other fields but do not exist in DB
+  },
+  //   For showing the fields which are calculated based on other fields but do not exist in DB
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
+reviewSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "tour",
+    select: "name",
+  }).populate({
+    path: "user",
+    select: "name photo",
+  });
+  next();
+});
 
 const Review = mongoose.model("Review", reviewSchema);
 
