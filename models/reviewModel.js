@@ -34,6 +34,9 @@ const reviewSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+reviewSchema.index({ index: 1, user: 1 }, { unique: true });
+
 reviewSchema.pre(/^find/, function (next) {
   this.populate({
     path: "user",
@@ -86,5 +89,4 @@ reviewSchema.post(/^findOneAnd/, async function () {
 });
 
 const Review = mongoose.model("Review", reviewSchema);
-console.log(review)
 module.exports = Review;
